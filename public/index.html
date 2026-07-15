@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bookly</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Michroma&family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2f7;
+    --ink: #322e3a;
+    --ink-soft: #6f6a7d;
+    --lavender: #9c93ab;
+    --lavender-dark: #6f6683;
+    --line: #ddd6e3;
+    --overlay: rgba(50, 46, 58, 0.92);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Space Grotesk", sans-serif;
+  }
+  .wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 64px 24px 100px;
+  }
+  header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    margin-bottom: 28px;
+  }
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 14px;
+    color: var(--lavender-dark);
+  }
+  h1 {
+    margin: 0;
+    font-family: "Michroma", sans-serif;
+    font-size: 20px;
+    font-weight: 400;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+  }
+  .subheading {
+    margin: 8px 0 0;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+  .rule {
+    border: none;
+    border-top: 1px solid var(--line);
+    margin: 40px 0 48px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px 24px;
+  }
+  @media (max-width: 880px) {
+    .grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .book {
+    position: relative;
+    cursor: pointer;
+  }
+  .cover {
+    aspect-ratio: 2 / 3;
+    border-radius: 3px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(50,46,58,0.15);
+    background: #e5e0ea;
+  }
+  .cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: sepia(12%) saturate(85%);
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: var(--overlay);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    border-radius: 3px;
+  }
+  .book:hover .overlay { opacity: 1; }
+  .overlay button {
+    width: 78%;
+    padding: 9px 10px;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255,255,255,0.55);
+    background: transparent;
+    color: #fff;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: "Space Grotesk", sans-serif;
+    transition: background 0.15s ease;
+  }
+  .overlay button:hover { background: rgba(255,255,255,0.14); }
+  .overlay button.primary {
+    background: #fff;
+    color: var(--ink);
+    border-color: #fff;
+  }
+  .overlay button.primary:hover { background: #eee6f0; }
+  .meta { margin-top: 12px; text-align: center; }
+  .meta .title { font-size: 14px; font-weight: 500; }
+  .meta .author {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    font-family: "Space Grotesk", sans-serif;
+    margin-top: 2px;
+  }
+  .meta .price {
+    font-size: 12px;
+    color: var(--lavender-dark);
+    font-family: "Space Grotesk", sans-serif;
+    margin-top: 4px;
+  }
+  #support-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 13px 20px;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(50,46,58,0.25);
+  }
+  #support-btn:hover { background: var(--lavender-dark); }
+
+  /* Agent modal: in-page chat + trace drawer */
+  #agent-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(50, 46, 58, 0.55);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #agent-backdrop.open { display: flex; }
+  .agent-modal {
+    background: var(--bg);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 760px;
+    max-height: 86vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+  }
+  .agent-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    background: #fff;
+  }
+  .agent-header span {
+    font-family: "Michroma", sans-serif;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .agent-header button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: var(--ink-soft);
+    cursor: pointer;
+    line-height: 1;
+  }
+  .agent-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .chat-panel {
+    flex: 1.3;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid var(--line);
+    min-width: 0;
+  }
+  .chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .chat-msg {
+    max-width: 82%;
+    padding: 9px 12px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.4;
+    white-space: pre-wrap;
+  }
+  .chat-msg.user {
+    align-self: flex-end;
+    background: var(--ink);
+    color: #fff;
+    border-bottom-right-radius: 3px;
+  }
+  .chat-msg.agent {
+    align-self: flex-start;
+    background: #eee6f0;
+    color: var(--ink);
+    border-bottom-left-radius: 3px;
+  }
+  .chat-form {
+    display: flex;
+    gap: 8px;
+    padding: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .chat-form input {
+    flex: 1;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 13px;
+  }
+  .chat-form button {
+    background: var(--lavender-dark);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 14px;
+    font-size: 12.5px;
+    cursor: pointer;
+    font-family: "Space Grotesk", sans-serif;
+  }
+  .trace-panel {
+    flex: 1;
+    background: #faf8fb;
+    overflow-y: auto;
+    padding: 14px;
+    min-width: 0;
+  }
+  .trace-label {
+    font-size: 10px;
+    color: var(--lavender);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .trace-step { display: flex; gap: 8px; margin-bottom: 10px; }
+  .trace-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .trace-step .label { font-size: 11px; font-weight: 500; color: var(--ink); }
+  .trace-step .detail { font-size: 10.5px; color: var(--ink-soft); margin-top: 1px; }
+  .trace-code {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 9.5px;
+    color: #4a4556;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 7px 9px;
+    margin: 4px 0 10px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <svg class="logo-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="10" width="6" height="28" rx="1" fill="currentColor" opacity="0.9"/>
+        <rect x="17" y="6" width="6" height="32" rx="1" fill="currentColor" opacity="0.7"/>
+        <rect x="26" y="12" width="6" height="26" rx="1" fill="currentColor" opacity="0.5"/>
+        <rect x="35" y="16" width="6" height="22" rx="1" fill="currentColor" opacity="0.35"/>
+      </svg>
+      <h1>Bookly</h1>
+      <p class="subheading">A Fictional Online Bookstore</p>
+    </header>
+
+    <hr class="rule" />
+
+    <div class="grid" id="book-grid"></div>
+  </div>
+
+  <button id="support-btn">💬 Bookly Agent</button>
+
+  <div id="agent-backdrop">
+    <div class="agent-modal">
+      <div class="agent-header">
+        <span>Bookly Agent</span>
+        <button id="agent-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="agent-body">
+        <div class="chat-panel">
+          <div class="chat-messages" id="chat-messages"></div>
+          <form class="chat-form" id="chat-form">
+            <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" />
+            <button type="submit">Send</button>
+          </form>
+        </div>
+        <div class="trace-panel">
+          <div class="trace-label">Agent trace</div>
+          <div id="trace-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const books = [
+    { title: "Don Quixote", author: "Miguel de Cervantes", price: "£12.99", file: "Don Quixote 15.jpg" },
+    { title: "Pride and Prejudice", author: "Jane Austen", price: "£10.99", file: "Thomson-PP20.jpg" },
+    { title: "Frankenstein", author: "Mary Shelley", price: "£9.99", file: "Frontispiece to Frankenstein 1831.jpg" },
+    { title: "The Divine Comedy", author: "Dante Alighieri", price: "£13.99", file: "Gustave Dore Inferno1.jpg" },
+    { title: "Gulliver's Travels", author: "Jonathan Swift", price: "£10.99", file: "The king of Brobdingnag and Gulliver LCCN95501600.jpg" },
+    { title: "Robinson Crusoe", author: "Daniel Defoe", price: "£10.99", file: "Robinson Crusoe Wyeth 1920.jpg" },
+    { title: "The Canterbury Tales", author: "Geoffrey Chaucer", price: "£12.99", file: "Chaucer ellesmere.jpg" },
+    { title: "Tristram Shandy", author: "Laurence Sterne", price: "£11.99", file: 'Frontispiece to "Tristram Shandy," Volume 1 MET DP825172.jpg' },
+  ];
+
+  const grid = document.getElementById("book-grid");
+
+  // Wikimedia Commons' Special:FilePath redirects a filename straight to the image bytes -
+  // no need to know the hashed storage path. All images below are public domain
+  // (authors/illustrators died decades to centuries ago).
+  function commonsUrl(filename) {
+    return "https://commons.wikimedia.org/wiki/Special:FilePath/" + encodeURIComponent(filename);
+  }
+
+  books.forEach((book) => {
+    const el = document.createElement("div");
+    el.className = "book";
+    el.innerHTML = `
+      <div class="cover">
+        <img src="${commonsUrl(book.file)}" alt="${book.title} cover illustration" loading="lazy" />
+        <div class="overlay">
+          <button class="primary">Add to basket</button>
+          <button>Read more</button>
+        </div>
+      </div>
+      <div class="meta">
+        <div class="title">${book.title}</div>
+        <div class="author">${book.author}</div>
+        <div class="price">${book.price}</div>
+      </div>
+    `;
+    grid.appendChild(el);
+  });
+
+  // --- Agent chat + trace drawer ---
+  const backdrop = document.getElementById("agent-backdrop");
+  const chatMessages = document.getElementById("chat-messages");
+  const traceList = document.getElementById("trace-list");
+  const chatForm = document.getElementById("chat-form");
+  const chatInput = document.getElementById("chat-input");
+
+  let conversation = []; // Anthropic message format, sent back on every request
+  let opened = false;
+
+  // Persist a conversation id across page refreshes so the transcript can be resumed.
+  let conversationId = localStorage.getItem("bookly_conversation_id");
+  if (!conversationId) {
+    conversationId = crypto.randomUUID();
+    localStorage.setItem("bookly_conversation_id", conversationId);
+  }
+
+  function addChatBubble(text, role) {
+    const el = document.createElement("div");
+    el.className = "chat-msg " + role;
+    el.textContent = text;
+    chatMessages.appendChild(el);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+  }
+
+  const traceColors = {
+    reasoning: "#7d7191",
+    tool_call: "#7d7191",
+    tool_result: "#a99fbd",
+    guardrail: "#EF9F27",
+    response: "#322e3a",
+  };
+  const traceLabels = {
+    reasoning: "Reasoning",
+    tool_call: "Tool invoked",
+    tool_result: "Result",
+    guardrail: "Guardrail check",
+    response: "Response sent",
+  };
+
+  function addTraceStep(entry) {
+    const el = document.createElement("div");
+    const color = traceColors[entry.type] || "#9c93ab";
+    const label = traceLabels[entry.type] || entry.type;
+    let detail = "";
+    let code = "";
+
+    if (entry.type === "reasoning") detail = entry.text;
+    else if (entry.type === "tool_call") { detail = entry.name; code = JSON.stringify(entry.input, null, 2); }
+    else if (entry.type === "tool_result") { detail = entry.name; code = JSON.stringify(entry.result, null, 2); }
+    else if (entry.type === "guardrail") detail = entry.note;
+    else if (entry.type === "response") detail = entry.text.length > 60 ? entry.text.slice(0, 60) + "..." : entry.text;
+
+    el.className = "trace-step";
+    el.innerHTML = `
+      <div class="trace-dot" style="background:${color}"></div>
+      <div style="flex:1;min-width:0;">
+        <div class="label">${label}</div>
+        <div class="detail">${detail}</div>
+        ${code ? `<div class="trace-code">${code}</div>` : ""}
+      </div>
+    `;
+    traceList.appendChild(el);
+    traceList.parentElement.scrollTop = traceList.parentElement.scrollHeight;
+  }
+
+  function extractText(content) {
+    if (typeof content === "string") return content;
+    return content.filter((b) => b.type === "text").map((b) => b.text).join("\n");
+  }
+
+  async function openAgent() {
+    backdrop.classList.add("open");
+    if (opened) return;
+    opened = true;
+
+    try {
+      const res = await fetch("/.netlify/functions/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, resume: true }),
+      });
+      const data = await res.json();
+      if (data.messages && data.messages.length) {
+        conversation = data.messages;
+        conversation.forEach((m) => {
+          const text = extractText(m.content);
+          if (text) addChatBubble(text, m.role === "user" ? "user" : "agent");
+        });
+        (data.trace || []).forEach(addTraceStep);
+        return;
+      }
+    } catch (err) {
+      // Resume failed silently - fall through to a fresh greeting.
+    }
+    addChatBubble("Hi! I'm Bookly Agent. How can I help you today?", "agent");
+  }
+
+  async function sendMessage(text) {
+    addChatBubble(text, "user");
+    conversation.push({ role: "user", content: text });
+
+    const typingEl = document.createElement("div");
+    typingEl.className = "chat-msg agent";
+    typingEl.style.fontStyle = "italic";
+    typingEl.style.opacity = "0.7";
+    typingEl.textContent = "Typing...";
+    chatMessages.appendChild(typingEl);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    try {
+      const res = await fetch("/.netlify/functions/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ conversationId, messages: conversation }),
+      });
+      const data = await res.json();
+      typingEl.remove();
+
+      if (data.error) {
+        addChatBubble("Something went wrong: " + data.error, "agent");
+        return;
+      }
+
+      conversation = data.messages;
+      addChatBubble(data.reply, "agent");
+      traceList.innerHTML = "";
+      (data.trace || []).forEach(addTraceStep);
+    } catch (err) {
+      typingEl.remove();
+      addChatBubble("Network error - is the function running?", "agent");
+    }
+  }
+
+  document.getElementById("support-btn").addEventListener("click", openAgent);
+  document.getElementById("agent-close").addEventListener("click", () => backdrop.classList.remove("open"));
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) backdrop.classList.remove("open"); });
+
+  chatForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text) return;
+    chatInput.value = "";
+    sendMessage(text);
+  });
+</script>
+</body>
+</html>

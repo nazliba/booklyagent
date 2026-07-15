@@ -1,0 +1,9 @@
+{
+  "name": "bookly-support-agent",
+  "version": "1.0.0",
+  "description": "Bookly customer support AI agent - Decagon SE take-home",
+  "private": true,
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}
