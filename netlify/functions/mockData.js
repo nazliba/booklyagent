@@ -33,6 +33,27 @@ const ORDERS = {
     delivered_date: "2026-05-05",
     return_eligible: false,
   },
+  "12345": {
+    order_number: "12345",
+    email: "nazli.basoglu@gmail.com",
+    fulfillment_status: "shipped",
+    financial_status: "paid",
+    line_items: [{ title: "Frankenstein", price: "9.99" }],
+    shipped_date: "2026-07-14",
+    delivered_date: null,
+    shipping_update:
+      "Your order has shipped and is currently in transit. Based on current carrier tracking, you can expect delivery within the next 2-3 business days.",
+    return_eligible: false,
+  },
+  "12340": {
+    order_number: "12340",
+    email: "nazli.basoglu@gmail.com",
+    fulfillment_status: "fulfilled",
+    financial_status: "paid",
+    line_items: [{ title: "The Divine Comedy", price: "13.99" }],
+    delivered_date: "2026-05-01",
+    return_eligible: false,
+  },
 };
 
 const POLICIES = {
