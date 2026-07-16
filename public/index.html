@@ -373,6 +373,7 @@
 
   let conversation = []; // Anthropic message format, sent back on every request
   let opened = false;
+  let renderedTraceCount = 0; // how many trace entries are already in the DOM
 
   // Persist a conversation id across page refreshes so the transcript can be resumed.
   let conversationId = localStorage.getItem("bookly_conversation_id");
@@ -427,7 +428,22 @@
       </div>
     `;
     traceList.appendChild(el);
-    traceList.parentElement.scrollTop = traceList.parentElement.scrollHeight;
+    // Note: no auto-scroll here - handled by the caller so we only jump to
+    // the bottom when the user was already there (see renderNewTrace below).
+  }
+
+  // Appends only the trace entries that aren't already rendered, and only
+  // auto-scrolls if the user was already at (or near) the bottom - so
+  // scrolling up to review earlier steps doesn't get yanked back down.
+  function renderNewTrace(fullTrace) {
+    const scrollEl = traceList.parentElement; // .trace-scroll
+    const wasAtBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 40;
+
+    const newEntries = (fullTrace || []).slice(renderedTraceCount);
+    newEntries.forEach(addTraceStep);
+    renderedTraceCount = (fullTrace || []).length;
+
+    if (wasAtBottom) scrollEl.scrollTop = scrollEl.scrollHeight;
   }
 
   function extractText(content) {
@@ -453,7 +469,7 @@
           const text = extractText(m.content);
           if (text) addChatBubble(text, m.role === "user" ? "user" : "agent");
         });
-        (data.trace || []).forEach(addTraceStep);
+        renderNewTrace(data.trace);
         return;
       }
     } catch (err) {
@@ -490,8 +506,7 @@
 
       conversation = data.messages;
       addChatBubble(data.reply, "agent");
-      traceList.innerHTML = "";
-      (data.trace || []).forEach(addTraceStep);
+      renderNewTrace(data.trace);
     } catch (err) {
       typingEl.remove();
       addChatBubble("Network error - is the function running?", "agent");
