@@ -21,7 +21,7 @@
 ## Order lookups & account security
 
 To protect customer privacy, Bookly's support agent (chat, phone, or email) will only disclose order details after verifying **both**:
-1. The order ID (found in the order confirmation email, format `BK-XXXX`), **and**
+1. The order number (found in your order confirmation email), **and**
 2. The email address used to place the order
 
 This verification is required even if the customer is not logged into a Bookly account, and applies to every channel equally. Order details will not be shared based on order ID alone.

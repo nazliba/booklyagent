@@ -35,7 +35,7 @@ const TOOLS = [
     input_schema: {
       type: "object",
       properties: {
-        order_number: { type: "string", description: "The order number, e.g. BK-1001" },
+        order_number: { type: "string", description: "The order number, e.g. 12345" },
         email: { type: "string", description: "The email address used to place the order" },
       },
       required: ["order_number", "email"],

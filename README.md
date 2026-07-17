@@ -52,7 +52,7 @@ production integration.
 
 ## Test scenarios (for the demo recording)
 
-- **Verification requirement**: "Where's my order BK-1001?" -> agent asks for the email too
+- **Verification requirement**: "Where's my order 12345?" -> agent asks for the email too
   before calling `shopify_get_order`
 - **Multi-turn / info collection**: "I want a refund" -> agent asks for order number, email,
   and reason before calling `shopify_create_refund`
