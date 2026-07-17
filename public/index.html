@@ -373,7 +373,6 @@
 
   let conversation = []; // Anthropic message format, sent back on every request
   let opened = false;
-  let renderedTraceCount = 0; // how many trace entries are already in the DOM
 
   // Persist a conversation id across page refreshes so the transcript can be resumed.
   let conversationId = localStorage.getItem("bookly_conversation_id");
@@ -428,22 +427,25 @@
       </div>
     `;
     traceList.appendChild(el);
-    // Note: no auto-scroll here - handled by the caller so we only jump to
-    // the bottom when the user was already there (see renderNewTrace below).
   }
 
-  // Appends only the trace entries that aren't already rendered, and only
-  // auto-scrolls if the user was already at (or near) the bottom - so
-  // scrolling up to review earlier steps doesn't get yanked back down.
-  function renderNewTrace(fullTrace) {
+  // Always fully re-renders from the server's trace array (the authoritative
+  // source of truth - avoids any client-side counter ever silently drifting
+  // out of sync), while preserving scroll position via distance-from-bottom
+  // so reviewing earlier steps doesn't get yanked back down on every turn.
+  function renderTrace(fullTrace) {
     const scrollEl = traceList.parentElement; // .trace-scroll
-    const wasAtBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 40;
+    const distanceFromBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
+    const wasAtBottom = distanceFromBottom < 40;
 
-    const newEntries = (fullTrace || []).slice(renderedTraceCount);
-    newEntries.forEach(addTraceStep);
-    renderedTraceCount = (fullTrace || []).length;
+    traceList.innerHTML = "";
+    (fullTrace || []).forEach(addTraceStep);
 
-    if (wasAtBottom) scrollEl.scrollTop = scrollEl.scrollHeight;
+    if (wasAtBottom) {
+      scrollEl.scrollTop = scrollEl.scrollHeight;
+    } else {
+      scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight - distanceFromBottom;
+    }
   }
 
   function extractText(content) {
@@ -469,7 +471,7 @@
           const text = extractText(m.content);
           if (text) addChatBubble(text, m.role === "user" ? "user" : "agent");
         });
-        renderNewTrace(data.trace);
+        renderTrace(data.trace);
         return;
       }
     } catch (err) {
@@ -506,7 +508,7 @@
 
       conversation = data.messages;
       addChatBubble(data.reply, "agent");
-      renderNewTrace(data.trace);
+      renderTrace(data.trace);
     } catch (err) {
       typingEl.remove();
       addChatBubble("Network error - is the function running?", "agent");
