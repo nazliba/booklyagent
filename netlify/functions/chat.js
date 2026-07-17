@@ -243,7 +243,11 @@ exports.handler = async (event) => {
     }
 
     const result = await runAgentLoop(messages, apiKey);
-    const combinedTrace = await persistConversation(conversationId, result.messages, result.trace);
+    // Persist for resume-after-refresh. Still awaited (a serverless function
+    // can freeze right after returning, so fire-and-forget risks losing the
+    // write) but we no longer use its return value for what we show live -
+    // result.trace (built fresh in memory this call) is always accurate.
+    await persistConversation(conversationId, result.messages, result.trace);
 
     return {
       statusCode: 200,
@@ -252,7 +256,7 @@ exports.handler = async (event) => {
         conversationId,
         reply: result.finalText,
         messages: result.messages,
-        trace: combinedTrace,
+        trace: result.trace,
       }),
     };
   } catch (err) {

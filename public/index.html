@@ -429,23 +429,31 @@
     traceList.appendChild(el);
   }
 
-  // Always fully re-renders from the server's trace array (the authoritative
-  // source of truth - avoids any client-side counter ever silently drifting
-  // out of sync), while preserving scroll position via distance-from-bottom
-  // so reviewing earlier steps doesn't get yanked back down on every turn.
-  function renderTrace(fullTrace) {
+  // The browser is the source of truth for the live trace log within a
+  // session - it accumulates every entry it's ever received directly, so
+  // history can never silently vanish due to a lossy server round-trip.
+  // Persistence to Blobs (for resume-after-refresh) happens separately and
+  // doesn't gate what's shown live.
+  let traceLog = [];
+
+  function appendTraceEntries(newEntries) {
+    if (!newEntries || !newEntries.length) return;
     const scrollEl = traceList.parentElement; // .trace-scroll
-    const distanceFromBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight;
-    const wasAtBottom = distanceFromBottom < 40;
+    const wasAtBottom = scrollEl.scrollHeight - scrollEl.scrollTop - scrollEl.clientHeight < 40;
 
+    traceLog.push(...newEntries);
+    newEntries.forEach(addTraceStep);
+
+    if (wasAtBottom) scrollEl.scrollTop = scrollEl.scrollHeight;
+  }
+
+  // Full rebuild - only used once, for the initial resume-on-open load.
+  function renderFullTrace(fullTrace) {
+    traceLog = fullTrace || [];
     traceList.innerHTML = "";
-    (fullTrace || []).forEach(addTraceStep);
-
-    if (wasAtBottom) {
-      scrollEl.scrollTop = scrollEl.scrollHeight;
-    } else {
-      scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight - distanceFromBottom;
-    }
+    traceLog.forEach(addTraceStep);
+    const scrollEl = traceList.parentElement;
+    scrollEl.scrollTop = scrollEl.scrollHeight;
   }
 
   function extractText(content) {
@@ -471,7 +479,7 @@
           const text = extractText(m.content);
           if (text) addChatBubble(text, m.role === "user" ? "user" : "agent");
         });
-        renderTrace(data.trace);
+        renderFullTrace(data.trace);
         return;
       }
     } catch (err) {
@@ -508,7 +516,7 @@
 
       conversation = data.messages;
       addChatBubble(data.reply, "agent");
-      renderTrace(data.trace);
+      appendTraceEntries(data.trace); // this turn's new entries only - always accurate
     } catch (err) {
       typingEl.remove();
       addChatBubble("Network error - is the function running?", "agent");
